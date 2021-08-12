@@ -14,17 +14,12 @@
       <ul class="nav navbar-nav">
         {{#active-li currentWhen='index'}}
           {{#link-to 'index'}}
-            <i class="fa fa-home"></i> Home
-          {{/link-to}}
-        {{/active-li}}
-        {{#active-li currentWhen='help'}}
-          {{#link-to 'help'}}
-            <i class="fa fa-rocket"></i> Help
+            <i class="fa fa-home"></i> 首页
           {{/link-to}}
         {{/active-li}}
         {{#active-li currentWhen='blocks'}}
           {{#link-to 'blocks'}}
-            <i class="fa fa-cubes"></i> Pool Blocks
+            <i class="fa fa-cubes"></i> 区块清单
             {{#if immatureTotal}}
               <span class="badge alert-success">{{immatureTotal}}</span>
             {{/if}}
@@ -32,17 +27,12 @@
         {{/active-li}}
         {{#active-li currentWhen='payments'}}
           {{#link-to 'payments'}}
-            <i class="fa fa-paper-plane-o"></i> Payments
+            <i class="fa fa-paper-plane-o"></i> 支付记录
           {{/link-to}}
         {{/active-li}}
         {{#active-li currentWhen='miners'}}
           {{#link-to 'miners'}}
-            <i class="fa fa-users"></i> Miners
-          {{/link-to}}
-        {{/active-li}}
-        {{#active-li currentWhen='about'}}
-          {{#link-to 'about'}}
-            <i class="fa fa-comments"></i> About <span class="badge alert-success">&#x2713;</span>
+            <i class="fa fa-users"></i> 矿工列表
           {{/link-to}}
         {{/active-li}}
       </ul>

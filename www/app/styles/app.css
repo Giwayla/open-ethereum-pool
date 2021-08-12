@@ -6,16 +6,18 @@ html {
 }
 body {
   /* Margin bottom by footer height */
-  margin-bottom: 60px;
-  background: url('/bg.png');
+	margin-bottom: 60px;
+	background: #f3f3f3;
+	font-family: "microsoft yahei";
 }
-.footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  /* Set the fixed height of the footer here */
-  height: 60px;
-  background-color: #f5f5f5;
+
+footer {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+	padding: 10px 0;
+	background: #fff;
+	border-bottom: 1px solid rgba(30,35,42,.06);
 }
 
 
@@ -40,94 +42,102 @@ body > .container {
   padding-left: 15px;
 }
 
+footer > .container p {
+	margin: 0;
+}
+
 .jumbotron {
 	margin: 0;
 	padding: 40px 0 15px 0;
 	margin-bottom: 15px;
-}
-
-code {
-  font-size: 80%;
+	background-color: transparent;
 }
 
 .navbar-default {
-	background-color: #04191f;
-	border-color: #69102b;
+	background: #fff;
+	border-color: rgba(30,35,42,.06);
 }
-.navbar-default .navbar-brand {
-	color: #dadada;
+
+.navbar-default .navbar-nav {
+	float: right;
+	font-size: 15px;
 }
-.navbar-default .navbar-brand:hover, .navbar-default .navbar-brand:focus {
-	color: #ffffff;
-}
-.navbar-default .navbar-text {
-	color: #dadada;
-}
+
 .navbar-default .navbar-nav > li > a {
-	color: #dadada;
+	color: #666;
 }
+
 .navbar-default .navbar-nav > li > a:hover, .navbar-default .navbar-nav > li > a:focus {
-	color: #ffffff;
-}
-.navbar-default .navbar-nav > .active > a, .navbar-default .navbar-nav > .active > a:hover, .navbar-default .navbar-nav > .active > a:focus {
-	color: #ffffff;
-	background-color: #0a6c9d;
-}
-.navbar-default .navbar-nav > .open > a, .navbar-default .navbar-nav > .open > a:hover, .navbar-default .navbar-nav > .open > a:focus {
-	color: #ffffff;
-	background-color: #69102b;
-}
-.navbar-default .navbar-toggle {
-	border-color: #0a6c9d;
-}
-.navbar-default .navbar-toggle:hover, .navbar-default .navbar-toggle:focus {
-	background-color: #0a6c9d;
-}
-.navbar-default .navbar-toggle .icon-bar {
-	background-color: #dadada;
-}
-.navbar-default .navbar-collapse,
-.navbar-default .navbar-form {
-	border-color: #dadada;
-}
-.navbar-default .navbar-link {
-	color: #dadada;
-}
-.navbar-default .navbar-link:hover {
-	color: #ffffff;
+	color: #0F88EB;
 }
 
-@media (max-width: 767px) {
-	.navbar-default .navbar-nav .open .dropdown-menu > li > a {
-		color: #dadada;
+.navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:focus, .navbar-default .navbar-nav>.active>a:hover {
+	color: #0F88EB;
+	background-color: transparent;
+}
+
+.well .nav-tabs {
+	border-bottom: transparent;
+}
+
+.col-xs-3 ul {
+	width: 140px;
+	margin-top: 20px;
+	border-radius: 4px;
+	border: 1px solid #ddd;
+	box-shadow: 0 1px 4px rgba(0,0,0,.067)
+}
+
+.col-xs-3 ul li {
+	margin: 0;
+	border-top: 1px solid #ddd
+}
+
+.col-xs-3 ul li:first-child {
+	border-top: none
+}
+
+.col-xs-3 ul li a {
+	margin: 0;
+	padding: 8px 1pc;
+	border-radius: 0
+}
+
+.col-xs-3 ul li.active a,.col-xs-3 ul li.active a:hover {
+	color: #fff;
+	background: #08c;
+	border: 1px solid #08c
+}
+
+.col-xs-3 ul li:first-child a {
+	border-radius: 4px 4px 0 0
+}
+
+.col-xs-3 ul li:last-child a {
+	border-radius: 0 0 4px 4px
+}
+
+.col-xs-3 ul.affix {
+	top: 30px
+}
+
+.panel-body p {
+	font-size: 16px;
+}
+
+@media (max-width: 768px) {
+	.navbar-default .navbar-nav {
+		float: left;
 	}
-	.navbar-default .navbar-nav .open .dropdown-menu > li > a:hover, .navbar-default .navbar-nav .open .dropdown-menu > li > a:focus {
-		color: #ffffff;
-	}
-	.navbar-default .navbar-nav .open .dropdown-menu > .active > a, .navbar-default .navbar-nav .open .dropdown-menu > .active > a:hover, .navbar-default .navbar-nav .open .dropdown-menu > .active > a:focus {
-		color: #ffffff;
-		background-color: #0a6c9d;
+
+	.table-responsive .text-center {
+		text-align: left;
 	}
 }
 
-span.logo-1 {
-	font-weight: 700;
-	color: #1994b8;
-}
-
-span.logo-2 {
-	font-weight: 300;
-	color: #FFF;
-}
-
-span.logo-3 {
-	color: #FFF;
-	font-weight: 100;
-}
-
-.navbar-collapse {
-	font-size: 14px;
-	font-weight: 200;
+span.logo {
+	color: #0F88EB;
+	font-size: 23px;
 }
 
 .note {

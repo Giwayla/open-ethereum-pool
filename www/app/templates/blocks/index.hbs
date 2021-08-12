@@ -1,14 +1,14 @@
 {{#if model.matured}}
 <h4>Matured Blocks</h4>
 <div class="table-responsive">
-  <table class="table table-condensed table-striped">
+  <table class="table table-bordered table-striped">
     <thead>
       <tr>
-        <th>Height</th>
+        <th>区块高度</th>
         <th>Block Hash</th>
-        <th>Time Found</th>
-        <th>Variance</th>
-        <th>Reward</th>
+        <th>时间</th>
+        <th>幸运值</th>
+        <th>收益</th>
       </tr>
     </thead>
     <tbody>
@@ -19,5 +19,5 @@
   </table>
 </div>
 {{else}}
-<h3>No matured blocks yet</h3>
+<h3>还没有成熟的区块产生.</h3>
 {{/if}}
