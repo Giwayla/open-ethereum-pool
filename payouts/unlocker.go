@@ -34,8 +34,7 @@ const constantinopleHardForkHeight = 7280000
 
 var homesteadReward = math.MustParseBig256("5000000000000000000")
 var byzantiumReward = math.MustParseBig256("3000000000000000000")
-var constReward = math.MustParseBig256("2000000000000000000")
-var uncleReward = new(big.Int).Div(constReward, new(big.Int).SetInt64(32))
+var constantinopleReward = math.MustParseBig256("2000000000000000000")
 
 // Donate 10% from pool fees to developers
 const donationFee = 0.0
@@ -114,6 +113,11 @@ func (u *BlockUnlocker) unlockCandidates(candidates []*storage.BlockData) (*Unlo
 		 */
 		for i := int64(minDepth * -1); i < minDepth; i++ {
 			height := candidate.Height + i
+
+			if height < 0 {
+				continue
+			}
+
 			block, err := u.rpc.GetBlockByHeight(height)
 			if err != nil {
 				log.Printf("Error while retrieving block %v from node: %v", height, err)
@@ -202,14 +206,12 @@ func matchCandidate(block *rpc.GetBlockReply, candidate *storage.BlockData) bool
 }
 
 func (u *BlockUnlocker) handleBlock(block *rpc.GetBlockReply, candidate *storage.BlockData) error {
-	// Initial 5 Ether static reward
-	reward := new(big.Int).Set(constReward)
-
 	correctHeight, err := strconv.ParseInt(strings.Replace(block.Number, "0x", "", -1), 16, 64)
 	if err != nil {
 		return err
 	}
 	candidate.Height = correctHeight
+	reward := getConstReward(candidate.Height)
 
 	// Add TX fees
 	extraTxReward, err := u.getExtraRewardForTx(block)
@@ -223,6 +225,7 @@ func (u *BlockUnlocker) handleBlock(block *rpc.GetBlockReply, candidate *storage
 	}
 
 	// Add reward for including uncles
+	uncleReward := getRewardForUncle(candidate.Height)
 	rewardForUncles := big.NewInt(0).Mul(uncleReward, big.NewInt(int64(len(block.Uncles))))
 	reward.Add(reward, rewardForUncles)
 
@@ -254,7 +257,7 @@ func (u *BlockUnlocker) unlockPendingBlocks() {
 
 	current, err := u.rpc.GetLatestBlock()
 	if err != nil {
-		//u.halt = true
+		u.halt = true
 		u.lastFail = err
 		log.Printf("Unable to get current blockchain height from node: %v", err)
 		return
@@ -337,7 +340,15 @@ func (u *BlockUnlocker) unlockPendingBlocks() {
 			if val, ok := percents[login]; ok {
 				per = val
 			}
-			u.backend.WriteReward(login, reward, per, true, block)
+
+			err = u.backend.WriteReward(login, reward, per, true, block)
+			if err != nil {
+				u.halt = true
+				u.lastFail = err
+				log.Printf("Failed to Write rewards for Mature Block of round %v: %v", block.RoundKey(), err)
+				return
+			}
+
 		}
 		log.Println(strings.Join(entries, "\n"))
 	}
@@ -439,10 +450,16 @@ func (u *BlockUnlocker) unlockAndCreditMiners() {
 			entries = append(entries, fmt.Sprintf("\tREWARD %v: %v: %v Shannon", block.RoundKey(), login, reward))
 
 			per := new(big.Rat)
-                        if val, ok := percents[login]; ok {
-                                per = val
-                        }
-                        u.backend.WriteReward(login, reward, per, false, block)
+			if val, ok := percents[login]; ok {
+				per = val
+			}
+			err = u.backend.WriteReward(login, reward, per, false, block)
+			if err != nil {
+				u.halt = true
+				u.lastFail = err
+				log.Printf("Failed to Write rewards for Immature Block of round %v: %v", block.RoundKey(), err)
+				return
+			}
 		}
 		log.Println(strings.Join(entries, "\n"))
 	}
@@ -469,7 +486,7 @@ func (u *BlockUnlocker) calculateRewards(block *storage.BlockData) (*big.Rat, *b
 		totalShares += val
 	}
 
-	rewards, percents := calculateRewardsForFinder(block.Finder, totalShares, minersProfit)
+	rewards, percents := calculateRewardsForShares(shares, totalShares, minersProfit)
 
 	if block.ExtraReward != nil {
 		extraReward := new(big.Rat).SetInt(block.ExtraReward)
@@ -493,15 +510,15 @@ func (u *BlockUnlocker) calculateRewards(block *storage.BlockData) (*big.Rat, *b
 	return revenue, minersProfit, poolProfit, rewards, percents, nil
 }
 
-func calculateRewardsForFinder(finder string, total int64, reward *big.Rat)(map[string]int64, map[string]*big.Rat) {
+func calculateRewardsForShares(shares map[string]int64, total int64, reward *big.Rat) (map[string]int64, map[string]*big.Rat) {
 	rewards := make(map[string]int64)
 	percents := make(map[string]*big.Rat)
 
-	login := finder 
-	percents[login] = big.NewRat(total, total)
-	workerReward := new(big.Rat).Mul(reward, percents[login])
-	rewards[login] += weiToShannonInt64(workerReward)
-	
+	for login, n := range shares {
+		percents[login] = big.NewRat(n, total)
+		workerReward := new(big.Rat).Mul(reward, percents[login])
+		rewards[login] += weiToShannonInt64(workerReward)
+	}
 	return rewards, percents
 }
 
@@ -519,9 +536,25 @@ func weiToShannonInt64(wei *big.Rat) int64 {
 	return value
 }
 
+func getConstReward(height int64) *big.Int {
+	if height >= constantinopleHardForkHeight {
+		return new(big.Int).Set(constantinopleReward)
+	}
+	if height >= byzantiumHardForkHeight {
+		return new(big.Int).Set(byzantiumReward)
+	}
+	return new(big.Int).Set(homesteadReward)
+}
+
+func getRewardForUncle(height int64) *big.Int {
+	reward := getConstReward(height)
+	return new(big.Int).Div(reward, new(big.Int).SetInt64(32))
+}
+
 func getUncleReward(uHeight, height int64) *big.Int {
-	reward := new(big.Int).Set(constReward)
-	reward.Mul(big.NewInt(uHeight+8-height), reward)
+	reward := getConstReward(height)
+	k := height - uHeight
+	reward.Mul(big.NewInt(8-k), reward)
 	reward.Div(reward, big.NewInt(8))
 	return reward
 }
