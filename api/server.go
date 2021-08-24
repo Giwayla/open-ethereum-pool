@@ -9,10 +9,9 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-	"fmt"
+
 	"github.com/gorilla/mux"
 
-	"github.com/robfig/cron"
 	"github.com/Giwayla/open-ethereum-pool/storage"
 	"github.com/Giwayla/open-ethereum-pool/util"
 )
@@ -20,10 +19,6 @@ import (
 type ApiConfig struct {
 	Enabled              bool   `json:"enabled"`
 	Listen               string `json:"listen"`
-	PoolCharts           string `json:"poolCharts"`
-	PoolChartsNum        int64  `json:"poolChartsNum"`
-	MinerChartsNum       int64  `json:"minerChartsNum"`
-	MinerCharts          string `json:"minerCharts"`
 	StatsCollectInterval string `json:"statsCollectInterval"`
 	HashrateWindow       string `json:"hashrateWindow"`
 	HashrateLargeWindow  string `json:"hashrateLargeWindow"`
@@ -48,7 +43,6 @@ type ApiServer struct {
 type Entry struct {
 	stats     map[string]interface{}
 	updatedAt int64
-	hasChart  bool
 }
 
 func NewApiServer(cfg *ApiConfig, backend *storage.RedisClient) *ApiServer {
@@ -102,71 +96,10 @@ func (s *ApiServer) Start() {
 		}
 	}()
 
-	go func() {
-		c := cron.New()
-
-		poolCharts := s.config.PoolCharts
-		log.Printf("pool charts config is :%v", poolCharts)
-		c.AddFunc(poolCharts, func() {
-			s.collectPoolCharts()
-		})
-
-		minerCharts := s.config.MinerCharts
-		log.Printf("miner charts config is :%v", minerCharts)
-		c.AddFunc(minerCharts, func() {
-
-			miners, err := s.backend.GetAllMinerAccount()
-			if err != nil {
-				log.Println("Get all miners account error: ", err)
-			}
-			for _, login := range miners {
-				miner, _ := s.backend.CollectWorkersStats(s.hashrateWindow, s.hashrateLargeWindow, login)
-				s.collectMinerCharts(login, miner["currentHashrate"].(int64), miner["hashrate"].(int64), miner["workersOnline"].(int64))
-			}
-		})
-
-		c.Start()
-	}()
-
-
-
-
-
 	if !s.config.PurgeOnly {
 		s.listen()
 	}
 }
-
-func (s *ApiServer) collectPoolCharts() {
-	ts := util.MakeTimestamp() / 1000
-	now := time.Now()
-	year, month, day := now.Date()
-	hour, min, _ := now.Clock()
-	t2 := fmt.Sprintf("%d-%02d-%02d %02d_%02d", year, month, day, hour, min)
-	stats := s.getStats()
-	hash := fmt.Sprint(stats["hashrate"])
-	log.Println("Pool Hash is ", ts, t2, hash)
-	err := s.backend.WritePoolCharts(ts, t2, hash)
-	if err != nil {
-		log.Printf("Failed to fetch pool charts from backend: %v", err)
-		return
-	}
-}
-
-func (s *ApiServer) collectMinerCharts(login string, hash int64, largeHash int64, workerOnline int64) {
-	ts := util.MakeTimestamp() / 1000
-	now := time.Now()
-	year, month, day := now.Date()
-	hour, min, _ := now.Clock()
-	t2 := fmt.Sprintf("%d-%02d-%02d %02d_%02d", year, month, day, hour, min)
-
-	log.Println("Miner "+login+" Hash is", ts, t2, hash, largeHash)
-	err := s.backend.WriteMinerCharts(ts, t2, login, hash, largeHash, workerOnline)
-	if err != nil {
-		log.Printf("Failed to fetch miner %v charts from backend: %v", login, err)
-	}
-}
-
 
 func (s *ApiServer) listen() {
 	r := mux.NewRouter()
@@ -213,8 +146,6 @@ func (s *ApiServer) collectStats() {
 			return
 		}
 	}
-	stats["poolCharts"], err = s.backend.GetPoolCharts(s.config.PoolChartsNum)
-	stats["totalWorkers"] = s.getWorkersNumber()
 	s.stats.Store(stats)
 	log.Printf("Stats collection finished %s", time.Since(start))
 }
@@ -236,14 +167,11 @@ func (s *ApiServer) StatsIndex(w http.ResponseWriter, r *http.Request) {
 	if stats != nil {
 		reply["now"] = util.MakeTimestamp()
 		reply["stats"] = stats["stats"]
-		reply["poolCharts"] = stats["poolCharts"]
 		reply["hashrate"] = stats["hashrate"]
 		reply["minersTotal"] = stats["minersTotal"]
-		reply["totalWorkers"] = stats["totalWorkers"]
 		reply["maturedTotal"] = stats["maturedTotal"]
 		reply["immatureTotal"] = stats["immatureTotal"]
 		reply["candidatesTotal"] = stats["candidatesTotal"]
-		//reply["nShares"] = stats["nShares"]
 	}
 
 	err = json.NewEncoder(w).Encode(reply)
@@ -357,7 +285,6 @@ func (s *ApiServer) AccountIndex(w http.ResponseWriter, r *http.Request) {
 			stats[key] = value
 		}
 		stats["pageSize"] = s.config.Payments
-		stats["minerCharts"], err = s.backend.GetMinerCharts(s.config.MinerChartsNum, login)
 		reply = &Entry{stats: stats, updatedAt: now}
 		s.miners[login] = reply
 	}
@@ -368,20 +295,6 @@ func (s *ApiServer) AccountIndex(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error serializing API response: ", err)
 	}
 }
-
-func (s *ApiServer) getWorkersNumber() (int64){
-	numberofWorker := int64(0)
-	miners, err := s.backend.GetAllMinerAccount()
-	if err != nil {
-		log.Println("Get all miners account error: ", err)
-	}
-	for _, login := range miners {
-		miner, _ := s.backend.CollectWorkersStats(s.hashrateWindow, s.hashrateLargeWindow, login)
-		numberofWorker += miner["workersOnline"].(int64)
-	}
-	return numberofWorker
-}
-
 
 func (s *ApiServer) getStats() map[string]interface{} {
 	stats := s.stats.Load()

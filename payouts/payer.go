@@ -120,15 +120,10 @@ func (u *PayoutsProcessor) process() {
 		amount, _ := u.backend.GetBalance(login)
 		amountInShannon := big.NewInt(amount)
 
-		ptresh, _ := u.backend.GetTreshold(login)
-		if(ptresh <= 10) {
-			ptresh = u.config.Threshold
-		}
-
 		// Shannon^2 = Wei
 		amountInWei := new(big.Int).Mul(amountInShannon, util.Shannon)
 
-		if !u.reachedThreshold(amountInShannon, ptresh) {
+		if !u.reachedThreshold(amountInShannon) {
 			continue
 		}
 		mustPay++
@@ -206,12 +201,18 @@ func (u *PayoutsProcessor) process() {
 			receipt, err := u.rpc.GetTxReceipt(txHash)
 			if err != nil {
 				log.Printf("Failed to get tx receipt for %v: %v", txHash, err)
+				continue
 			}
+			// Tx has been mined
 			if receipt != nil && receipt.Confirmed() {
+				if receipt.Successful() {
+					log.Printf("Payout tx successful for %s: %s", login, txHash)
+				} else {
+					log.Printf("Payout tx failed for %s: %s. Address contract throws on incoming tx.", login, txHash)
+				}
 				break
 			}
 		}
-		log.Printf("Payout tx for %s confirmed: %s", login, txHash)
 	}
 
 	if mustPay > 0 {
@@ -248,8 +249,8 @@ func (self PayoutsProcessor) checkPeers() bool {
 	return true
 }
 
-func (self PayoutsProcessor) reachedThreshold(amount *big.Int, threshold int64) bool {
-	return big.NewInt(threshold).Cmp(amount) < 0
+func (self PayoutsProcessor) reachedThreshold(amount *big.Int) bool {
+	return big.NewInt(self.config.Threshold).Cmp(amount) < 0
 }
 
 func formatPendingPayments(list []*storage.PendingPayment) string {

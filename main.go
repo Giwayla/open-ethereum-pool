@@ -1,3 +1,5 @@
+// +build go1.9
+
 package main
 
 import (
@@ -80,7 +82,7 @@ func main() {
 
 	startNewrelic()
 
-	backend = storage.NewRedisClient(&cfg.Redis, cfg.Coin, cfg.Pplns)
+	backend = storage.NewRedisClient(&cfg.Redis, cfg.Coin)
 	pong, err := backend.Check()
 	if err != nil {
 		log.Printf("Can't establish connection to backend: %v", err)

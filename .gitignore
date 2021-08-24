@@ -4,3 +4,6 @@ testnet.json
 
 /build/_workspace/
 /build/bin/
+
+www/config/environment.js
+www/package-lock.json

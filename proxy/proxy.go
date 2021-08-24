@@ -35,11 +35,18 @@ type ProxyServer struct {
 	sessionsMu sync.RWMutex
 	sessions   map[*Session]struct{}
 	timeout    time.Duration
-	Extranonce string
+	// Extranonce
+	Extranonces map[string]bool
 }
 
 type jobDetails struct {
 	JobID      string
+	SeedHash   string
+	HeaderHash string
+	Height     string
+}
+
+type staleJob struct {
 	SeedHash   string
 	HeaderHash string
 }
@@ -50,11 +57,16 @@ type Session struct {
 
 	// Stratum
 	sync.Mutex
-	conn           *net.TCPConn
-	sslconn        net.Conn
-	login          string
+	conn  net.Conn
+	login string
+
+	stratum        int
 	subscriptionID string
-	JobDeatils     jobDetails
+	Extranonce     string
+	ExtranonceSub  bool
+	JobDetails     jobDetails
+	staleJobs      map[string]staleJob
+	staleJobIDs    []string
 }
 
 func NewProxy(cfg *Config, backend *storage.RedisClient) *ProxyServer {
@@ -75,17 +87,8 @@ func NewProxy(cfg *Config, backend *storage.RedisClient) *ProxyServer {
 
 	if cfg.Proxy.Stratum.Enabled {
 		proxy.sessions = make(map[*Session]struct{})
+		proxy.Extranonces = make(map[string]bool)
 		go proxy.ListenTCP()
-	}
-
-	if cfg.Proxy.StratumSSL.Enabled {
-		proxy.sessions = make(map[*Session]struct{})
-		go proxy.ListenSSLTCP()
-	}
-
-	if cfg.Proxy.StratumNiceHash.Enabled {
-		proxy.sessions = make(map[*Session]struct{})
-		go proxy.ListenNiceHashTCP()
 	}
 
 	proxy.fetchBlockTemplate()
@@ -316,7 +319,7 @@ func (cs *Session) handleMessage(s *ProxyServer, r *http.Request, req *JSONRpcRe
 		return
 	}
 	if !s.policy.ApplyLoginPolicy(login, cs.ip) {
-		errReply := &ErrorReply{Code: -1, Message: "You are blacklisted, please contact helpdesk with your details"}
+		errReply := &ErrorReply{Code: -1, Message: "You are blacklisted"}
 		cs.sendError(req.Id, errReply)
 		return
 	}

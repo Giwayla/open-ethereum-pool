@@ -177,6 +177,7 @@ func (r *RPCClient) GetBalance(address string) (*big.Int, error) {
 
 func (r *RPCClient) Sign(from string, s string) (string, error) {
 	hash := sha256.Sum256([]byte(s))
+	//rpcResp, err := r.doPost(r.Url, "eth_sign", []string{from, common.ToHex(hash[:])})
 	rpcResp, err := r.doPost(r.Url, "eth_sign", []string{from, hexutil.Encode(hash[:])})
 	var reply string
 	if err != nil {
@@ -194,19 +195,6 @@ func (r *RPCClient) Sign(from string, s string) (string, error) {
 
 func (r *RPCClient) GetPeerCount() (int64, error) {
 	rpcResp, err := r.doPost(r.Url, "net_peerCount", nil)
-	if err != nil {
-		return 0, err
-	}
-	var reply string
-	err = json.Unmarshal(*rpcResp.Result, &reply)
-	if err != nil {
-		return 0, err
-	}
-	return strconv.ParseInt(strings.Replace(reply, "0x", "", -1), 16, 64)
-}
-
-func (r *RPCClient) GetGasPrice() (int64, error) {
-	rpcResp, err := r.doPost(r.Url, "eth_gasPrice", nil)
 	if err != nil {
 		return 0, err
 	}
