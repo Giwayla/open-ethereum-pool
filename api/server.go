@@ -101,6 +101,37 @@ func (s *ApiServer) Start() {
 	}
 }
 
+func (s *ApiServer) collectPoolCharts() {
+	ts := util.MakeTimestamp() / 1000
+	now := time.Now()
+	year, month, day := now.Date()
+	hour, min, _ := now.Clock()
+	t2 := fmt.Sprintf("%d-%02d-%02d %02d_%02d", year, month, day, hour, min)
+	stats := s.getStats()
+	hash := fmt.Sprint(stats["hashrate"])
+	log.Println("Pool Hash is ", ts, t2, hash)
+	err := s.backend.WritePoolCharts(ts, t2, hash)
+	if err != nil {
+		log.Printf("Failed to fetch pool charts from backend: %v", err)
+		return
+	}
+}
+
+func (s *ApiServer) collectMinerCharts(login string, hash int64, largeHash int64, workerOnline int64) {
+	ts := util.MakeTimestamp() / 1000
+	now := time.Now()
+	year, month, day := now.Date()
+	hour, min, _ := now.Clock()
+	t2 := fmt.Sprintf("%d-%02d-%02d %02d_%02d", year, month, day, hour, min)
+
+	log.Println("Miner "+login+" Hash is", ts, t2, hash, largeHash)
+	err := s.backend.WriteMinerCharts(ts, t2, login, hash, largeHash, workerOnline)
+	if err != nil {
+		log.Printf("Failed to fetch miner %v charts from backend: %v", login, err)
+	}
+}
+
+
 func (s *ApiServer) listen() {
 	r := mux.NewRouter()
 	r.HandleFunc("/api/stats", s.StatsIndex)
@@ -146,6 +177,7 @@ func (s *ApiServer) collectStats() {
 			return
 		}
 	}
+	stats["totalWorkers"] = s.getWorkersNumber()
 	s.stats.Store(stats)
 	log.Printf("Stats collection finished %s", time.Since(start))
 }
@@ -169,6 +201,7 @@ func (s *ApiServer) StatsIndex(w http.ResponseWriter, r *http.Request) {
 		reply["stats"] = stats["stats"]
 		reply["hashrate"] = stats["hashrate"]
 		reply["minersTotal"] = stats["minersTotal"]
+		reply["totalWorkers"] = stats["totalWorkers"]
 		reply["maturedTotal"] = stats["maturedTotal"]
 		reply["immatureTotal"] = stats["immatureTotal"]
 		reply["candidatesTotal"] = stats["candidatesTotal"]
@@ -295,6 +328,20 @@ func (s *ApiServer) AccountIndex(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error serializing API response: ", err)
 	}
 }
+
+func (s *ApiServer) getWorkersNumber() (int64){
+	numberofWorker := int64(0)
+	miners, err := s.backend.GetAllMinerAccount()
+	if err != nil {
+		log.Println("Get all miners account error: ", err)
+	}
+	for _, login := range miners {
+		miner, _ := s.backend.CollectWorkersStats(s.hashrateWindow, s.hashrateLargeWindow, login)
+		numberofWorker += miner["workersOnline"].(int64)
+	}
+	return numberofWorker
+}
+
 
 func (s *ApiServer) getStats() map[string]interface{} {
 	stats := s.stats.Load()
