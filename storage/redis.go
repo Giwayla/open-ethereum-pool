@@ -117,6 +117,28 @@ func (r *RedisClient) GetWhitelist() ([]string, error) {
 	}
 	return cmd.Val(), nil
 }
+func (r *RedisClient) GetAllMinerAccount() (account []string, err error) {
+	var c int64
+	for {
+		now := util.MakeTimestamp() / 1000
+		c, keys, err := r.client.Scan(c, r.formatKey("miners", "*"), now).Result()
+
+		if err != nil {
+			return account, err
+		}
+		for _, key := range keys {
+			m := strings.Split(key, ":")
+			//if ( len(m) >= 2 && strings.Index(strings.ToLower(m[2]), "0x") == 0) {
+			if len(m) >= 2 {
+				account = append(account, m[2])
+			}
+		}
+		if c == 0 {
+			break
+		}
+	}
+	return account, nil
+}
 
 func (r *RedisClient) WriteNodeState(id string, height uint64, diff *big.Int) error {
 	tx := r.client.Multi()
