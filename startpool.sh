@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #Make sure no other pesky screens are running
-killall screen
-screen -wipe
+#killall screen
+#screen -wipe
 
 
 #proxy:
