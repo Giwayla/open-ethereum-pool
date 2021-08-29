@@ -7,7 +7,7 @@
 
 	"proxy": {
 		"enabled": true,
-		"listen": "0.0.0.0:8888",
+		"listen": "0.0.0.0:8107",
 		"limitHeadersSize": 1024,
 		"limitBodySize": 256,
 		"behindReverseProxy": false,
@@ -57,9 +57,9 @@
 		"purgeOnly": false,
 		"purgeInterval": "10m",
 		"listen": "0.0.0.0:8080",
-		"statsCollectInterval": "5s",
+		"statsCollectInterval": "30s",
 		"hashrateWindow": "30m",
-		"hashrateLargeWindow": "3h",
+		"hashrateLargeWindow": "24h",
 		"luckWindow": [64, 128, 256],
 		"payments": 30,
 		"blocks": 50
@@ -105,7 +105,7 @@
 		"interval": "120m",
 		"daemon": "http://127.0.0.1:8545",
 		"timeout": "10s",
-		"address": "0x0",
+		"address": "",
 		"gas": "21000",
 		"gasPrice": "50000000000",
 		"autoGas": true,

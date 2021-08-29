@@ -2,10 +2,12 @@
 	"threads": 2,
 	"coin": "ethereum-pplns",
 	"name": "main",
+	"pplns": 1000000,
+	"coin-name":"ETH",
 
 	"proxy": {
 		"enabled": false,
-		"listen": "0.0.0.0:8888",
+		"listen": "0.0.0.0:8107",
 		"limitHeadersSize": 1024,
 		"limitBodySize": 256,
 		"behindReverseProxy": false,
@@ -55,9 +57,9 @@
 		"purgeOnly": false,
 		"purgeInterval": "10m",
 		"listen": "0.0.0.0:8080",
-		"statsCollectInterval": "5s",
+		"statsCollectInterval": "30s",
 		"hashrateWindow": "30m",
-		"hashrateLargeWindow": "3h",
+		"hashrateLargeWindow": "24h",
 		"luckWindow": [64, 128, 256],
 		"payments": 30,
 		"blocks": 50
