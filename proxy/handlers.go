@@ -113,7 +113,7 @@ func (s *ProxyServer) handleSubmitRPC(cs *Session, login, id string, params []st
 		return false, nil
 	}
 	if s.config.Proxy.Debug {
-		log.Printf("Valid share from %s@%s", login, cid)
+		log.Printf("Valid share from %s@%s", login, id)
 	}
 
 	if !ok {
