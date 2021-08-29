@@ -37,7 +37,7 @@ func (s *ProxyServer) handleLoginRPC(cs *Session, params []string, id string) (b
 	}
 	cs.login = login
 	s.registerSession(cs)
-	log.Printf("Stratum miner connected %v@%v", login, cs.ip)
+	log.Printf("Stratum miner connected %v:%v", login, id)
 	return true, nil
 }
 
@@ -73,7 +73,7 @@ func (s *ProxyServer) handleSubmitRPC(cs *Session, login, id string, params []st
 	}
 	if len(params) != 3 {
 		s.policy.ApplyMalformedPolicy(cs.ip)
-		log.Printf("Malformed params from %s@%s %v", login, cs.ip, params)
+		log.Printf("Malformed params from %s@%s %v", login, id, params)
 		return false, &ErrorReply{Code: -1, Message: "Invalid params"}
 	}
 
@@ -88,7 +88,7 @@ func (s *ProxyServer) handleSubmitRPC(cs *Session, login, id string, params []st
 
 	if !noncePattern.MatchString(params[0]) || !hashPattern.MatchString(params[1]) || !hashPattern.MatchString(params[2]) {
 		s.policy.ApplyMalformedPolicy(cs.ip)
-		log.Printf("Malformed PoW result from %s@%s %v", login, cs.ip, params)
+		log.Printf("Malformed PoW result from %s@%s %v", login, id, params)
 		return false, &ErrorReply{Code: -1, Message: "Malformed PoW result"}
 	}
 	t := s.currentBlockTemplate()
@@ -96,7 +96,7 @@ func (s *ProxyServer) handleSubmitRPC(cs *Session, login, id string, params []st
 	ok := s.policy.ApplySharePolicy(cs.ip, !exist && validShare)
 
 	if exist {
-		log.Printf("Duplicate share from %s@%s %v", login, cs.ip, params)
+		log.Printf("Duplicate share from %s@%s %v", login, id, params)
 
 		if !ok {
 			return false, &ErrorReply{Code: 23, Message: "Invalid share"}
@@ -105,7 +105,7 @@ func (s *ProxyServer) handleSubmitRPC(cs *Session, login, id string, params []st
 	}
 
 	if !validShare {
-		log.Printf("Invalid share from %s@%s", login, cs.ip)
+		log.Printf("Invalid share from %s@%s", login, id)
 		// Bad shares limit reached, return error and close
 		if !ok {
 			return false, &ErrorReply{Code: 23, Message: "Invalid share"}
@@ -113,7 +113,7 @@ func (s *ProxyServer) handleSubmitRPC(cs *Session, login, id string, params []st
 		return false, nil
 	}
 	if s.config.Proxy.Debug {
-		log.Printf("Valid share from %s@%s", login, cs.ip)
+		log.Printf("Valid share from %s@%s", login, cid)
 	}
 
 	if !ok {

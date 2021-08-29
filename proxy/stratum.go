@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	MaxReqSize = 1024
+	MaxReqSize = 10240
 )
 
 const (
