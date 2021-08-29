@@ -84,6 +84,10 @@ func NewRedisClient(cfg *Config, prefix string) *RedisClient {
 		Password: cfg.Password,
 		DB:       cfg.Database,
 		PoolSize: cfg.PoolSize,
+	  	PoolTimeout:  2 * time.Minute,
+    		IdleTimeout:  10 * time.Minute,
+    		ReadTimeout:  2 * time.Minute,
+    		WriteTimeout: 1 * time.Minute,
 	})
 	return &RedisClient{client: client, prefix: prefix}
 }
